@@ -18,6 +18,7 @@ import java.util.Objects;
 @Entity
 @Table(name = "products")
 public class Product extends PanacheEntity {
+
     @NotBlank(message = "Product name is required")
     @Column(nullable = false)
     private String name;

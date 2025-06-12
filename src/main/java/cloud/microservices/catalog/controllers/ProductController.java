@@ -20,6 +20,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.net.URI;
@@ -33,6 +35,8 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Product", description = "Product operations")
 public class ProductController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
 
     /**
      * The Product service.
@@ -61,14 +65,25 @@ public class ProductController {
             @Parameter(description = "Page size", required = false) @QueryParam("size") Integer size,
             @Context UriInfo uriInfo) {
 
-        int[] pageParams = PaginationUtil.validatePaginationParams(page, size);
-        int validPage = pageParams[0];
-        int validSize = pageParams[1];
+        logger.info("Getting all products with pagination - page: {}, size: {}", page, size);
 
-        List<ProductDTO> products = productService.getAllProductsPaginated(validPage, validSize);
-        long totalCount = productService.countAllProducts();
+        try {
+            int[] pageParams = PaginationUtil.validatePaginationParams(page, size);
+            int validPage = pageParams[0];
+            int validSize = pageParams[1];
 
-        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize, uriInfo);
+            logger.debug("Validated pagination parameters - page: {}, size: {}", validPage, validSize);
+
+            List<ProductDTO> products = productService.getAllProductsPaginated(validPage, validSize);
+            long totalCount = productService.countAllProducts();
+
+            logger.info("Retrieved {} products out of {} total", products.size(), totalCount);
+
+            return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize, uriInfo);
+        } catch (Exception e) {
+            logger.error("Error retrieving all products", e);
+            throw e;
+        }
     }
 
     /**
@@ -88,8 +103,19 @@ public class ProductController {
     @APIResponse(responseCode = "401", description = "Unauthorized")
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response getProductById(@PathParam("id") Long id) {
-        ProductDTO product = productService.getProductById(id);
-        return Response.ok(product).build();
+        logger.info("Getting product by ID: {}", id);
+
+        try {
+            ProductDTO product = productService.getProductById(id);
+            logger.info("Retrieved product: {}, name: {}", id, product.getName());
+            return Response.ok(product).build();
+        } catch (NotFoundException e) {
+            logger.warn("Product not found with ID: {}", id);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving product with ID: {}", id, e);
+            throw e;
+        }
     }
 
     /**
@@ -108,10 +134,21 @@ public class ProductController {
     @APIResponse(responseCode = "401", description = "Unauthorized")
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response createProduct(@Valid ProductCreateDTO productCreateDTO) {
-        ProductDTO createdProduct = productService.createProduct(productCreateDTO);
-        return Response.created(URI.create("/api/products/" + createdProduct.getId()))
-                .entity(createdProduct)
-                .build();
+        logger.info("Creating new product: {}", productCreateDTO.getName());
+        logger.debug("Product details: category={}, price={}, publisher={}", 
+                productCreateDTO.getCategory(), productCreateDTO.getPrice(), productCreateDTO.getPublisher());
+
+        try {
+            ProductDTO createdProduct = productService.createProduct(productCreateDTO);
+            logger.info("Product created successfully with ID: {}", createdProduct.getId());
+
+            return Response.created(URI.create("/api/products/" + createdProduct.getId()))
+                    .entity(createdProduct)
+                    .build();
+        } catch (Exception e) {
+            logger.error("Error creating product: {}", productCreateDTO.getName(), e);
+            throw e;
+        }
     }
 
     /**
@@ -133,8 +170,21 @@ public class ProductController {
     @APIResponse(responseCode = "401", description = "Unauthorized")
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response updateProduct(@PathParam("id") Long id, @Valid ProductUpdateDTO productUpdateDTO) {
-        ProductDTO updatedProduct = productService.updateProduct(id, productUpdateDTO);
-        return Response.ok(updatedProduct).build();
+        logger.info("Updating product with ID: {}", id);
+        logger.debug("Update details: {}", productUpdateDTO);
+
+        try {
+            ProductDTO updatedProduct = productService.updateProduct(id, productUpdateDTO);
+            logger.info("Product updated successfully: ID={}, name={}", id, updatedProduct.getName());
+
+            return Response.ok(updatedProduct).build();
+        } catch (NotFoundException e) {
+            logger.warn("Product not found for update with ID: {}", id);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error updating product with ID: {}", id, e);
+            throw e;
+        }
     }
 
     /**
@@ -152,8 +202,20 @@ public class ProductController {
     @APIResponse(responseCode = "401", description = "Unauthorized")
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response deleteProduct(@PathParam("id") Long id) {
-        productService.deleteProduct(id);
-        return Response.noContent().build();
+        logger.info("Deleting product with ID: {}", id);
+
+        try {
+            productService.deleteProduct(id);
+            logger.info("Product deleted successfully: ID={}", id);
+
+            return Response.noContent().build();
+        } catch (NotFoundException e) {
+            logger.warn("Product not found for deletion with ID: {}", id);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error deleting product with ID: {}", id, e);
+            throw e;
+        }
     }
 
     /**

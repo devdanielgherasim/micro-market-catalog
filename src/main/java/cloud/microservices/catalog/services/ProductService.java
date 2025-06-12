@@ -10,6 +10,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -20,6 +22,8 @@ import java.util.stream.Collectors;
  */
 @ApplicationScoped
 public class ProductService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ProductService.class);
 
     @Inject
     ProductRepository productRepository;
@@ -71,10 +75,16 @@ public class ProductService {
      * @throws NotFoundException if product not found
      */
     public ProductDTO getProductById(Long id) {
+        logger.debug("Service: Getting product by ID: {}", id);
+
         Product product = productRepository.findById(id);
         if (product == null) {
+            logger.warn("Service: Product with ID {} not found", id);
             throw new NotFoundException("Product with ID " + id + " not found");
         }
+
+        logger.debug("Service: Found product: {}, name: {}, price: {}", 
+                id, product.getName(), product.getPrice());
 
         // Log the read operation
         auditService.logRead("Product", id.toString(), "Viewed product: " + product.getName());
@@ -90,14 +100,26 @@ public class ProductService {
      */
     @Transactional
     public ProductDTO createProduct(ProductCreateDTO productCreateDTO) {
-        Product product = new Product();
-        productMapper.fromCreateDTO(productCreateDTO, product);
-        productRepository.persist(product);
+        logger.info("Service: Creating new product: {}", productCreateDTO.getName());
+        logger.debug("Service: Product details to create: category={}, price={}, publisher={}", 
+                productCreateDTO.getCategory(), productCreateDTO.getPrice(), productCreateDTO.getPublisher());
 
-        auditService.logCreate("Product", product.id.toString(),
-                "Created new product: " + product.getName() + ", Price: " + product.getPrice());
+        try {
+            Product product = new Product();
+            productMapper.fromCreateDTO(productCreateDTO, product);
 
-        return productMapper.toDTO(product);
+            logger.debug("Service: Persisting product to database");
+            productRepository.persist(product);
+            logger.info("Service: Product persisted successfully with ID: {}", product.id);
+
+            auditService.logCreate("Product", product.id.toString(),
+                    "Created new product: " + product.getName() + ", Price: " + product.getPrice());
+
+            return productMapper.toDTO(product);
+        } catch (Exception e) {
+            logger.error("Service: Error creating product: {}", productCreateDTO.getName(), e);
+            throw e;
+        }
     }
 
     /**
@@ -110,28 +132,48 @@ public class ProductService {
      */
     @Transactional
     public ProductDTO updateProduct(Long id, ProductUpdateDTO productUpdateDTO) {
-        Product product = productRepository.findById(id);
-        if (product == null) {
-            throw new NotFoundException("Product with ID " + id + " not found");
+        logger.info("Service: Updating product with ID: {}", id);
+        logger.debug("Service: Update details: {}", productUpdateDTO);
+
+        try {
+            Product product = productRepository.findById(id);
+            if (product == null) {
+                logger.warn("Service: Product with ID {} not found for update", id);
+                throw new NotFoundException("Product with ID " + id + " not found");
+            }
+
+            logger.debug("Service: Found product to update: {}, current name: {}, current price: {}", 
+                    id, product.getName(), product.getPrice());
+
+            String originalName = product.getName();
+            BigDecimal originalPrice = product.getPrice();
+
+            productMapper.fromUpdateDTO(productUpdateDTO, product);
+
+            logger.debug("Service: Persisting updated product to database");
+            productRepository.persist(product);
+            logger.info("Service: Product updated successfully: ID={}", id);
+
+            String details = "Updated product: " + originalName;
+            if (productUpdateDTO.getName() != null && !productUpdateDTO.getName().equals(originalName)) {
+                details += " - Name changed to: " + product.getName();
+                logger.info("Service: Product name changed from '{}' to '{}'", originalName, product.getName());
+            }
+            if (productUpdateDTO.getPrice() != null && !productUpdateDTO.getPrice().equals(originalPrice)) {
+                details += " - Price changed from: " + originalPrice + " to: " + product.getPrice();
+                logger.info("Service: Product price changed from {} to {}", originalPrice, product.getPrice());
+            }
+
+            auditService.logUpdate("Product", id.toString(), details);
+
+            return productMapper.toDTO(product);
+        } catch (NotFoundException e) {
+            // Already logged above
+            throw e;
+        } catch (Exception e) {
+            logger.error("Service: Error updating product with ID: {}", id, e);
+            throw e;
         }
-
-        String originalName = product.getName();
-        BigDecimal originalPrice = product.getPrice();
-
-        productMapper.fromUpdateDTO(productUpdateDTO, product);
-        productRepository.persist(product);
-
-        String details = "Updated product: " + originalName;
-        if (productUpdateDTO.getName() != null && !productUpdateDTO.getName().equals(originalName)) {
-            details += " - Name changed to: " + product.getName();
-        }
-        if (productUpdateDTO.getPrice() != null && !productUpdateDTO.getPrice().equals(originalPrice)) {
-            details += " - Price changed from: " + originalPrice + " to: " + product.getPrice();
-        }
-
-        auditService.logUpdate("Product", id.toString(), details);
-
-        return productMapper.toDTO(product);
     }
 
     /**
@@ -142,18 +184,34 @@ public class ProductService {
      */
     @Transactional
     public void deleteProduct(Long id) {
-        Product product = productRepository.findById(id);
-        if (product == null) {
-            throw new NotFoundException("Product with ID " + id + " not found");
+        logger.info("Service: Deleting product with ID: {}", id);
+
+        try {
+            Product product = productRepository.findById(id);
+            if (product == null) {
+                logger.warn("Service: Product with ID {} not found for deletion", id);
+                throw new NotFoundException("Product with ID " + id + " not found");
+            }
+
+            logger.debug("Service: Found product to delete: {}, name: {}, price: {}", 
+                    id, product.getName(), product.getPrice());
+
+            // Store product details for audit log
+            String productName = product.getName();
+
+            logger.debug("Service: Deleting product from database");
+            productRepository.delete(product);
+            logger.info("Service: Product deleted successfully: ID={}, name={}", id, productName);
+
+            // Log the delete operation
+            auditService.logDelete("Product", id.toString(), "Deleted product: " + productName);
+        } catch (NotFoundException e) {
+            // Already logged above
+            throw e;
+        } catch (Exception e) {
+            logger.error("Service: Error deleting product with ID: {}", id, e);
+            throw e;
         }
-
-        // Store product details for audit log
-        String productName = product.getName();
-
-        productRepository.delete(product);
-
-        // Log the delete operation
-        auditService.logDelete("Product", id.toString(), "Deleted product: " + productName);
     }
 
     /**

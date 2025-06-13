@@ -40,9 +40,24 @@ public class ProductService {
      * @return list of all products
      */
     public List<ProductDTO> getAllProducts() {
-        return productRepository.findAll().stream()
-                .map(productMapper::toDTO)
-                .collect(Collectors.toList());
+        logger.info("Service: Getting all products");
+
+        try {
+            logger.debug("Service: Retrieving all products from repository");
+            List<ProductDTO> products = productRepository.findAll().stream()
+                    .map(productMapper::toDTO)
+                    .collect(Collectors.toList());
+
+            logger.info("Service: Retrieved {} products", products.size());
+
+            // Log the read operation
+            auditService.logRead("Product", "all", "Viewed all products");
+
+            return products;
+        } catch (Exception e) {
+            logger.error("Service: Error retrieving all products", e);
+            throw e;
+        }
     }
 
     /**
@@ -53,9 +68,21 @@ public class ProductService {
      * @return paginated list of products
      */
     public List<ProductDTO> getAllProductsPaginated(int page, int size) {
-        return productRepository.findAllPaginated(page, size).list().stream()
-                .map(productMapper::toDTO)
-                .collect(Collectors.toList());
+        logger.info("Service: Getting all products with pagination - page: {}, size: {}", page, size);
+
+        try {
+            logger.debug("Service: Retrieving paginated products from repository");
+            List<ProductDTO> products = productRepository.findAllPaginated(page, size).list().stream()
+                    .map(productMapper::toDTO)
+                    .toList();
+
+            logger.info("Service: Retrieved {} products for page {} with size {}", products.size(), page, size);
+
+            return products;
+        } catch (Exception e) {
+            logger.error("Service: Error retrieving paginated products - page: {}, size: {}", page, size, e);
+            throw e;
+        }
     }
 
     /**
@@ -64,7 +91,16 @@ public class ProductService {
      * @return the total count of products
      */
     public long countAllProducts() {
-        return productRepository.countAll();
+        logger.debug("Service: Counting all products");
+
+        try {
+            long count = productRepository.countAll();
+            logger.debug("Service: Total product count: {}", count);
+            return count;
+        } catch (Exception e) {
+            logger.error("Service: Error counting all products", e);
+            throw e;
+        }
     }
 
     /**
@@ -83,7 +119,7 @@ public class ProductService {
             throw new NotFoundException("Product with ID " + id + " not found");
         }
 
-        logger.debug("Service: Found product: {}, name: {}, price: {}", 
+        logger.debug("Service: Found product: {}, name: {}, price: {}",
                 id, product.getName(), product.getPrice());
 
         // Log the read operation
@@ -101,7 +137,7 @@ public class ProductService {
     @Transactional
     public ProductDTO createProduct(ProductCreateDTO productCreateDTO) {
         logger.info("Service: Creating new product: {}", productCreateDTO.getName());
-        logger.debug("Service: Product details to create: category={}, price={}, publisher={}", 
+        logger.debug("Service: Product details to create: category={}, price={}, publisher={}",
                 productCreateDTO.getCategory(), productCreateDTO.getPrice(), productCreateDTO.getPublisher());
 
         try {
@@ -125,7 +161,7 @@ public class ProductService {
     /**
      * Update an existing product.
      *
-     * @param id the product ID
+     * @param id               the product ID
      * @param productUpdateDTO the product data to update
      * @return the updated product DTO
      * @throws NotFoundException if product not found
@@ -142,7 +178,7 @@ public class ProductService {
                 throw new NotFoundException("Product with ID " + id + " not found");
             }
 
-            logger.debug("Service: Found product to update: {}, current name: {}, current price: {}", 
+            logger.debug("Service: Found product to update: {}, current name: {}, current price: {}",
                     id, product.getName(), product.getPrice());
 
             String originalName = product.getName();
@@ -193,7 +229,7 @@ public class ProductService {
                 throw new NotFoundException("Product with ID " + id + " not found");
             }
 
-            logger.debug("Service: Found product to delete: {}, name: {}, price: {}", 
+            logger.debug("Service: Found product to delete: {}, name: {}, price: {}",
                     id, product.getName(), product.getPrice());
 
             // Store product details for audit log
@@ -221,17 +257,22 @@ public class ProductService {
      * @return list of products in the category
      */
     public List<ProductDTO> findByCategory(String category) {
-        return productRepository.findByCategory(category).stream()
+        logger.info("Service: Finding products by category: {}", category);
+
+        List<ProductDTO> products = productRepository.findByCategory(category).stream()
                 .map(productMapper::toDTO)
                 .collect(Collectors.toList());
+
+        logger.info("Service: Found {} products in category: {}", products.size(), category);
+        return products;
     }
 
     /**
      * Find products by category with pagination.
      *
      * @param category the category
-     * @param page the page number (0-based)
-     * @param size the page size
+     * @param page     the page number (0-based)
+     * @param size     the page size
      * @return paginated list of products in the category
      */
     public List<ProductDTO> findByCategoryPaginated(String category, int page, int size) {
@@ -257,9 +298,14 @@ public class ProductService {
      * @return list of products matching the name
      */
     public List<ProductDTO> findByName(String name) {
-        return productRepository.findByNameContaining(name).stream()
+        logger.info("Service: Finding products by name containing: {}", name);
+
+        List<ProductDTO> products = productRepository.findByNameContaining(name).stream()
                 .map(productMapper::toDTO)
                 .collect(Collectors.toList());
+
+        logger.info("Service: Found {} products matching name: {}", products.size(), name);
+        return products;
     }
 
     /**
@@ -294,9 +340,14 @@ public class ProductService {
      * @return list of products in the price range
      */
     public List<ProductDTO> findByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
-        return productRepository.findByPriceRange(minPrice, maxPrice).stream()
+        logger.info("Service: Finding products by price range: {} to {}", minPrice, maxPrice);
+
+        List<ProductDTO> products = productRepository.findByPriceRange(minPrice, maxPrice).stream()
                 .map(productMapper::toDTO)
                 .collect(Collectors.toList());
+
+        logger.info("Service: Found {} products in price range: {} to {}", products.size(), minPrice, maxPrice);
+        return products;
     }
 
     /**
@@ -304,8 +355,8 @@ public class ProductService {
      *
      * @param minPrice the minimum price
      * @param maxPrice the maximum price
-     * @param page the page number (0-based)
-     * @param size the page size
+     * @param page     the page number (0-based)
+     * @param size     the page size
      * @return paginated list of products in the price range
      */
     public List<ProductDTO> findByPriceRangePaginated(BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
@@ -331,9 +382,14 @@ public class ProductService {
      * @return list of available products
      */
     public List<ProductDTO> findAvailableProducts() {
-        return productRepository.findAvailable().stream()
+        logger.info("Service: Finding available products");
+
+        List<ProductDTO> products = productRepository.findAvailable().stream()
                 .map(productMapper::toDTO)
                 .collect(Collectors.toList());
+
+        logger.info("Service: Found {} available products", products.size());
+        return products;
     }
 
     /**
@@ -365,17 +421,22 @@ public class ProductService {
      * @return list of products from the publisher
      */
     public List<ProductDTO> findByPublisher(String publisher) {
-        return productRepository.findByPublisher(publisher).stream()
+        logger.info("Service: Finding products by publisher: {}", publisher);
+
+        List<ProductDTO> products = productRepository.findByPublisher(publisher).stream()
                 .map(productMapper::toDTO)
                 .collect(Collectors.toList());
+
+        logger.info("Service: Found {} products from publisher: {}", products.size(), publisher);
+        return products;
     }
 
     /**
      * Find products by publisher with pagination.
      *
      * @param publisher the publisher
-     * @param page the page number (0-based)
-     * @param size the page size
+     * @param page      the page number (0-based)
+     * @param size      the page size
      * @return paginated list of products from the publisher
      */
     public List<ProductDTO> findByPublisherPaginated(String publisher, int page, int size) {

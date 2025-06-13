@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Objects;
@@ -17,7 +19,9 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "products")
-public class Product extends PanacheEntity {
+public class Product extends PanacheEntity implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @NotBlank(message = "Product name is required")
     @Column(nullable = false)
@@ -276,25 +280,27 @@ public class Product extends PanacheEntity {
 
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         Product product = (Product) o;
-        return isAvailable == product.isAvailable && Objects.equals(name, product.name) && Objects.equals(description, product.description) && Objects.equals(price, product.price) && Objects.equals(category, product.category) && Objects.equals(version, product.version) && Objects.equals(releaseDate, product.releaseDate) && Objects.equals(publisher, product.publisher) && Objects.equals(features, product.features) && Objects.equals(requirements, product.requirements);
+        return isAvailable == product.isAvailable && 
+               Objects.equals(id, product.id) &&
+               Objects.equals(name, product.name) && 
+               Objects.equals(description, product.description) && 
+               Objects.equals(price, product.price) && 
+               Objects.equals(category, product.category) && 
+               Objects.equals(version, product.version) && 
+               Objects.equals(releaseDate, product.releaseDate) && 
+               Objects.equals(publisher, product.publisher) && 
+               Objects.equals(features, product.features) && 
+               Objects.equals(requirements, product.requirements);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(name);
-        result = 31 * result + Objects.hashCode(description);
-        result = 31 * result + Objects.hashCode(price);
-        result = 31 * result + Objects.hashCode(category);
-        result = 31 * result + Objects.hashCode(version);
-        result = 31 * result + Objects.hashCode(releaseDate);
-        result = 31 * result + Objects.hashCode(publisher);
-        result = 31 * result + Objects.hashCode(features);
-        result = 31 * result + Objects.hashCode(requirements);
-        result = 31 * result + Boolean.hashCode(isAvailable);
-        return result;
+        return Objects.hash(id, name, description, price, category, version, 
+                           releaseDate, publisher, features, requirements, isAvailable);
     }
 
     @Override

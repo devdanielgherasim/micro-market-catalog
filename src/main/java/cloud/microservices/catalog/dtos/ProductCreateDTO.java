@@ -4,13 +4,18 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Objects;
 
 /**
  * Data Transfer Object for creating a new Product.
  */
-public class ProductCreateDTO {
+public class ProductCreateDTO implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 2L;
 
     @NotBlank(message = "Product name is required")
     private String name;
@@ -262,25 +267,26 @@ public class ProductCreateDTO {
 
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         ProductCreateDTO that = (ProductCreateDTO) o;
-        return isAvailable == that.isAvailable && name.equals(that.name) && description.equals(that.description) && price.equals(that.price) && category.equals(that.category) && version.equals(that.version) && releaseDate.equals(that.releaseDate) && publisher.equals(that.publisher) && features.equals(that.features) && requirements.equals(that.requirements);
+        return isAvailable == that.isAvailable && 
+               Objects.equals(name, that.name) && 
+               Objects.equals(description, that.description) && 
+               Objects.equals(price, that.price) && 
+               Objects.equals(category, that.category) && 
+               Objects.equals(version, that.version) && 
+               Objects.equals(releaseDate, that.releaseDate) && 
+               Objects.equals(publisher, that.publisher) && 
+               Objects.equals(features, that.features) && 
+               Objects.equals(requirements, that.requirements);
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + description.hashCode();
-        result = 31 * result + price.hashCode();
-        result = 31 * result + category.hashCode();
-        result = 31 * result + version.hashCode();
-        result = 31 * result + releaseDate.hashCode();
-        result = 31 * result + publisher.hashCode();
-        result = 31 * result + features.hashCode();
-        result = 31 * result + requirements.hashCode();
-        result = 31 * result + Boolean.hashCode(isAvailable);
-        return result;
+        return Objects.hash(name, description, price, category, version, 
+                           releaseDate, publisher, features, requirements, isAvailable);
     }
 
     @Override

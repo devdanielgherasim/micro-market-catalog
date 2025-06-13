@@ -1,6 +1,12 @@
 package cloud.microservices.catalog.utils;
 
-import jakarta.json.bind.annotation.JsonbProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -9,11 +15,15 @@ import java.util.List;
  *
  * @param <T> The type of items in the list
  */
-public class PageResponse<T> {
-    @JsonbProperty("content")
+@JsonSerialize
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, getterVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+public class PageResponse<T> implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+    @JsonProperty("content")
     private List<T> content;
 
-    @JsonbProperty("pagination")
+    @JsonProperty("pagination")
     private PaginationMetadata pagination;
 
     /**
@@ -86,11 +96,13 @@ public class PageResponse<T> {
 
     /**
      * Returns a string representation of this PageResponse.
+     * This is only for debugging purposes and should not be used for serialization.
      *
      * @return a string representation of this PageResponse
      */
     @Override
     public String toString() {
+        // This method should not be used for serialization, only for debugging
         return "PageResponse{" +
                 "content=" + (content != null ? "[" + content.size() + " items]" : "null") +
                 ", pagination=" + pagination +
@@ -98,25 +110,39 @@ public class PageResponse<T> {
     }
 
     /**
+     * This method is used by Jackson for serialization.
+     * It ensures that the object is properly serialized to JSON.
+     *
+     * @return The content of this PageResponse
+     */
+    public List<T> getItems() {
+        return content;
+    }
+
+    /**
      * Inner class for pagination metadata.
      */
-    public static class PaginationMetadata {
-        @JsonbProperty("page")
+    @JsonSerialize
+    @JsonAutoDetect(fieldVisibility = Visibility.ANY, getterVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+    public static class PaginationMetadata implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 2L;
+        @JsonProperty("page")
         private int page;
 
-        @JsonbProperty("size")
+        @JsonProperty("size")
         private int size;
 
-        @JsonbProperty("totalElements")
+        @JsonProperty("totalElements")
         private long totalElements;
 
-        @JsonbProperty("totalPages")
+        @JsonProperty("totalPages")
         private int totalPages;
 
-        @JsonbProperty("first")
+        @JsonProperty("first")
         private boolean first;
 
-        @JsonbProperty("last")
+        @JsonProperty("last")
         private boolean last;
 
         /**
@@ -128,8 +154,8 @@ public class PageResponse<T> {
         /**
          * Constructor with pagination parameters.
          *
-         * @param page         The current page number (0-based)
-         * @param size         The page size
+         * @param page          The current page number (0-based)
+         * @param size          The page size
          * @param totalElements The total count of items across all pages
          */
         public PaginationMetadata(int page, int size, long totalElements) {
@@ -251,11 +277,13 @@ public class PageResponse<T> {
 
         /**
          * Returns a string representation of this PaginationMetadata.
+         * This is only for debugging purposes and should not be used for serialization.
          *
          * @return a string representation of this PaginationMetadata
          */
         @Override
         public String toString() {
+            // This method should not be used for serialization, only for debugging
             return "PaginationMetadata{" +
                     "page=" + page +
                     ", size=" + size +
@@ -264,6 +292,23 @@ public class PageResponse<T> {
                     ", first=" + first +
                     ", last=" + last +
                     '}';
+        }
+
+        /**
+         * This method is used by Jackson for serialization.
+         * It ensures that the object is properly serialized to JSON.
+         *
+         * @return The metadata as a map
+         */
+        public java.util.Map<String, Object> getMetadata() {
+            java.util.Map<String, Object> metadata = new java.util.HashMap<>();
+            metadata.put("page", page);
+            metadata.put("size", size);
+            metadata.put("totalElements", totalElements);
+            metadata.put("totalPages", totalPages);
+            metadata.put("first", first);
+            metadata.put("last", last);
+            return metadata;
         }
     }
 }

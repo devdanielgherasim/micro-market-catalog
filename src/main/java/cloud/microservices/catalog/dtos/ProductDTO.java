@@ -1,28 +1,46 @@
 package cloud.microservices.catalog.dtos;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Objects;
 
 /**
  * Data Transfer Object for Product entity.
  */
+@JsonSerialize
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, getterVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
 public class ProductDTO implements Serializable {
     @Serial
-    private static final long serialVersionUID = 8688887140375612893L;
+    private static final long serialVersionUID = 1L;
 
+    @JsonProperty("id")
     private Long id;
+    @JsonProperty("name")
     private String name;
+    @JsonProperty("description")
     private String description;
+    @JsonProperty("price")
     private BigDecimal price;
+    @JsonProperty("category")
     private String category;
+    @JsonProperty("version")
     private String version;
+    @JsonProperty("releaseDate")
     private LocalDate releaseDate;
+    @JsonProperty("publisher")
     private String publisher;
+    @JsonProperty("features")
     private String features;
+    @JsonProperty("requirements")
     private String requirements;
+    @JsonProperty("available")
     private boolean isAvailable;
 
     /**
@@ -265,6 +283,7 @@ public class ProductDTO implements Serializable {
      *
      * @return the boolean
      */
+    @JsonProperty("available")
     public boolean isAvailable() {
         return isAvailable;
     }
@@ -282,26 +301,27 @@ public class ProductDTO implements Serializable {
 
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         ProductDTO that = (ProductDTO) o;
-        return isAvailable == that.isAvailable && id.equals(that.id) && name.equals(that.name) && description.equals(that.description) && price.equals(that.price) && category.equals(that.category) && version.equals(that.version) && releaseDate.equals(that.releaseDate) && publisher.equals(that.publisher) && features.equals(that.features) && requirements.equals(that.requirements);
+        return isAvailable == that.isAvailable &&
+                Objects.equals(id, that.id) &&
+                Objects.equals(name, that.name) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(price, that.price) &&
+                Objects.equals(category, that.category) &&
+                Objects.equals(version, that.version) &&
+                Objects.equals(releaseDate, that.releaseDate) &&
+                Objects.equals(publisher, that.publisher) &&
+                Objects.equals(features, that.features) &&
+                Objects.equals(requirements, that.requirements);
     }
 
     @Override
     public int hashCode() {
-        int result = id.hashCode();
-        result = 31 * result + name.hashCode();
-        result = 31 * result + description.hashCode();
-        result = 31 * result + price.hashCode();
-        result = 31 * result + category.hashCode();
-        result = 31 * result + version.hashCode();
-        result = 31 * result + releaseDate.hashCode();
-        result = 31 * result + publisher.hashCode();
-        result = 31 * result + features.hashCode();
-        result = 31 * result + requirements.hashCode();
-        result = 31 * result + Boolean.hashCode(isAvailable);
-        return result;
+        return Objects.hash(id, name, description, price, category, version,
+                releaseDate, publisher, features, requirements, isAvailable);
     }
 
     @Override

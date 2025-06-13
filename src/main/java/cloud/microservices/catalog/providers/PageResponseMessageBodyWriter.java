@@ -1,7 +1,8 @@
-package cloud.microservices.catalog.utils;
+package cloud.microservices.catalog.providers;
 
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
+import cloud.microservices.catalog.utils.PageResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
@@ -12,33 +13,22 @@ import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /**
- * Custom message body writer for PageResponse objects.
+ * Custom MessageBodyWriter for PageResponse objects.
  * Ensures proper JSON serialization of PageResponse objects.
  */
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
 public class PageResponseMessageBodyWriter implements MessageBodyWriter<PageResponse<?>> {
 
-    private final Jsonb jsonb = JsonbBuilder.create();
+    @Inject
+    ObjectMapper objectMapper;
 
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        // Check if the type is PageResponse
-        if (!PageResponse.class.isAssignableFrom(type)) {
-            return false;
-        }
-
-        // If genericType is a ParameterizedType, ensure it's PageResponse<?>
-        if (genericType instanceof ParameterizedType) {
-            ParameterizedType parameterizedType = (ParameterizedType) genericType;
-            return parameterizedType.getRawType() == PageResponse.class;
-        }
-
-        return true;
+        return PageResponse.class.isAssignableFrom(type);
     }
 
     @Override
@@ -46,7 +36,10 @@ public class PageResponseMessageBodyWriter implements MessageBodyWriter<PageResp
                         MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
             throws IOException, WebApplicationException {
         
-        // Serialize the PageResponse object to JSON
-        jsonb.toJson(pageResponse, entityStream);
+        // Ensure content type is set to application/json
+        httpHeaders.putSingle("Content-Type", MediaType.APPLICATION_JSON);
+        
+        // Use the injected ObjectMapper to serialize the PageResponse object
+        objectMapper.writeValue(entityStream, pageResponse);
     }
 }

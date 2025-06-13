@@ -1,8 +1,8 @@
-package cloud.microservices.catalog.utils;
+package cloud.microservices.catalog.providers;
 
 import cloud.microservices.catalog.dtos.ProductDTO;
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
@@ -16,18 +16,18 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
 /**
- * Custom message body writer for ProductDTO objects.
+ * Custom MessageBodyWriter for ProductDTO objects.
  * Ensures proper JSON serialization of ProductDTO objects.
  */
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
 public class ProductDTOMessageBodyWriter implements MessageBodyWriter<ProductDTO> {
 
-    private final Jsonb jsonb = JsonbBuilder.create();
+    @Inject
+    ObjectMapper objectMapper;
 
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        // Check if the type is ProductDTO
         return ProductDTO.class.isAssignableFrom(type);
     }
 
@@ -36,7 +36,10 @@ public class ProductDTOMessageBodyWriter implements MessageBodyWriter<ProductDTO
                         MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
             throws IOException, WebApplicationException {
         
-        // Serialize the ProductDTO object to JSON
-        jsonb.toJson(productDTO, entityStream);
+        // Ensure content type is set to application/json
+        httpHeaders.putSingle("Content-Type", MediaType.APPLICATION_JSON);
+        
+        // Use the injected ObjectMapper to serialize the ProductDTO object
+        objectMapper.writeValue(entityStream, productDTO);
     }
 }

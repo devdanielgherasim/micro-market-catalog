@@ -10,10 +10,8 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -49,7 +47,6 @@ public class ProductController {
      *
      * @param page the page number (0-based)
      * @param size the page size
-     * @param uriInfo the URI info for building pagination links
      * @return the paginated products
      */
     @GET
@@ -61,10 +58,8 @@ public class ProductController {
     @APIResponse(responseCode = "401", description = "Unauthorized")
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response getAllProducts(
-            @Parameter(description = "Page number (0-based)", required = false) @QueryParam("page") Integer page,
-            @Parameter(description = "Page size", required = false) @QueryParam("size") Integer size,
-            @Context UriInfo uriInfo) {
-
+            @Parameter(description = "Page number (0-based)") @QueryParam("page") Integer page,
+            @Parameter(description = "Page size") @QueryParam("size") Integer size) {
         logger.info("Getting all products with pagination - page: {}, size: {}", page, size);
 
         try {
@@ -77,9 +72,9 @@ public class ProductController {
             List<ProductDTO> products = productService.getAllProductsPaginated(validPage, validSize);
             long totalCount = productService.countAllProducts();
 
-            logger.info("Retrieved {} products out of {} total", products.size(), totalCount);
+            logger.info("Retrieved {} products out of {} total, {}", products.size(), totalCount, products);
 
-            return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize, uriInfo);
+            return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize);
         } catch (Exception e) {
             logger.error("Error retrieving all products", e);
             throw e;
@@ -108,7 +103,11 @@ public class ProductController {
         try {
             ProductDTO product = productService.getProductById(id);
             logger.info("Retrieved product: {}, name: {}", id, product.getName());
-            return Response.ok(product).build();
+            return Response.ok()
+                    .entity(product)
+                    .header("Content-Type", MediaType.APPLICATION_JSON)
+                    .encoding("UTF-8")
+                    .build();
         } catch (NotFoundException e) {
             logger.warn("Product not found with ID: {}", id);
             throw e;
@@ -135,7 +134,7 @@ public class ProductController {
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response createProduct(@Valid ProductCreateDTO productCreateDTO) {
         logger.info("Creating new product: {}", productCreateDTO.getName());
-        logger.debug("Product details: category={}, price={}, publisher={}", 
+        logger.debug("Product details: category={}, price={}, publisher={}",
                 productCreateDTO.getCategory(), productCreateDTO.getPrice(), productCreateDTO.getPublisher());
 
         try {
@@ -144,6 +143,8 @@ public class ProductController {
 
             return Response.created(URI.create("/api/products/" + createdProduct.getId()))
                     .entity(createdProduct)
+                    .header("Content-Type", MediaType.APPLICATION_JSON)
+                    .encoding("UTF-8")
                     .build();
         } catch (Exception e) {
             logger.error("Error creating product: {}", productCreateDTO.getName(), e);
@@ -177,7 +178,11 @@ public class ProductController {
             ProductDTO updatedProduct = productService.updateProduct(id, productUpdateDTO);
             logger.info("Product updated successfully: ID={}, name={}", id, updatedProduct.getName());
 
-            return Response.ok(updatedProduct).build();
+            return Response.ok()
+                    .entity(updatedProduct)
+                    .header("Content-Type", MediaType.APPLICATION_JSON)
+                    .encoding("UTF-8")
+                    .build();
         } catch (NotFoundException e) {
             logger.warn("Product not found for update with ID: {}", id);
             throw e;
@@ -222,9 +227,8 @@ public class ProductController {
      * Find products by category with pagination support.
      *
      * @param category the category
-     * @param page the page number (0-based)
-     * @param size the page size
-     * @param uriInfo the URI info for building pagination links
+     * @param page     the page number (0-based)
+     * @param size     the page size
      * @return the paginated response
      */
     @GET
@@ -238,9 +242,8 @@ public class ProductController {
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response findByCategory(
             @PathParam("category") String category,
-            @Parameter(description = "Page number (0-based)", required = false) @QueryParam("page") Integer page,
-            @Parameter(description = "Page size", required = false) @QueryParam("size") Integer size,
-            @Context UriInfo uriInfo) {
+            @Parameter(description = "Page number (0-based)") @QueryParam("page") Integer page,
+            @Parameter(description = "Page size") @QueryParam("size") Integer size) {
 
         int[] pageParams = PaginationUtil.validatePaginationParams(page, size);
         int validPage = pageParams[0];
@@ -249,7 +252,7 @@ public class ProductController {
         List<ProductDTO> products = productService.findByCategoryPaginated(category, validPage, validSize);
         long totalCount = productService.countByCategory(category);
 
-        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize, uriInfo);
+        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize);
     }
 
     /**
@@ -258,7 +261,6 @@ public class ProductController {
      * @param name the name to search for
      * @param page the page number (0-based)
      * @param size the page size
-     * @param uriInfo the URI info for building pagination links
      * @return the paginated response
      */
     @GET
@@ -272,9 +274,8 @@ public class ProductController {
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response searchByName(
             @QueryParam("name") String name,
-            @Parameter(description = "Page number (0-based)", required = false) @QueryParam("page") Integer page,
-            @Parameter(description = "Page size", required = false) @QueryParam("size") Integer size,
-            @Context UriInfo uriInfo) {
+            @Parameter(description = "Page number (0-based)") @QueryParam("page") Integer page,
+            @Parameter(description = "Page size") @QueryParam("size") Integer size) {
 
         int[] pageParams = PaginationUtil.validatePaginationParams(page, size);
         int validPage = pageParams[0];
@@ -283,7 +284,7 @@ public class ProductController {
         List<ProductDTO> products = productService.findByNamePaginated(name, validPage, validSize);
         long totalCount = productService.countByName(name);
 
-        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize, uriInfo);
+        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize);
     }
 
     /**
@@ -291,9 +292,8 @@ public class ProductController {
      *
      * @param minPrice the min price
      * @param maxPrice the max price
-     * @param page the page number (0-based)
-     * @param size the page size
-     * @param uriInfo the URI info for building pagination links
+     * @param page     the page number (0-based)
+     * @param size     the page size
      * @return the paginated response
      */
     @GET
@@ -306,11 +306,10 @@ public class ProductController {
     @APIResponse(responseCode = "401", description = "Unauthorized")
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response findByPriceRange(
-            @QueryParam("min") BigDecimal minPrice, 
+            @QueryParam("min") BigDecimal minPrice,
             @QueryParam("max") BigDecimal maxPrice,
-            @Parameter(description = "Page number (0-based)", required = false) @QueryParam("page") Integer page,
-            @Parameter(description = "Page size", required = false) @QueryParam("size") Integer size,
-            @Context UriInfo uriInfo) {
+            @Parameter(description = "Page number (0-based)") @QueryParam("page") Integer page,
+            @Parameter(description = "Page size") @QueryParam("size") Integer size) {
 
         int[] pageParams = PaginationUtil.validatePaginationParams(page, size);
         int validPage = pageParams[0];
@@ -319,7 +318,7 @@ public class ProductController {
         List<ProductDTO> products = productService.findByPriceRangePaginated(minPrice, maxPrice, validPage, validSize);
         long totalCount = productService.countByPriceRange(minPrice, maxPrice);
 
-        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize, uriInfo);
+        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize);
     }
 
     /**
@@ -327,7 +326,6 @@ public class ProductController {
      *
      * @param page the page number (0-based)
      * @param size the page size
-     * @param uriInfo the URI info for building pagination links
      * @return the paginated response
      */
     @GET
@@ -340,9 +338,8 @@ public class ProductController {
     @APIResponse(responseCode = "401", description = "Unauthorized")
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response findAvailableProducts(
-            @Parameter(description = "Page number (0-based)", required = false) @QueryParam("page") Integer page,
-            @Parameter(description = "Page size", required = false) @QueryParam("size") Integer size,
-            @Context UriInfo uriInfo) {
+            @Parameter(description = "Page number (0-based)") @QueryParam("page") Integer page,
+            @Parameter(description = "Page size") @QueryParam("size") Integer size) {
 
         int[] pageParams = PaginationUtil.validatePaginationParams(page, size);
         int validPage = pageParams[0];
@@ -351,16 +348,15 @@ public class ProductController {
         List<ProductDTO> products = productService.findAvailableProductsPaginated(validPage, validSize);
         long totalCount = productService.countAvailableProducts();
 
-        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize, uriInfo);
+        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize);
     }
 
     /**
      * Find products by publisher with pagination support.
      *
      * @param publisher the publisher
-     * @param page the page number (0-based)
-     * @param size the page size
-     * @param uriInfo the URI info for building pagination links
+     * @param page      the page number (0-based)
+     * @param size      the page size
      * @return the paginated response
      */
     @GET
@@ -374,9 +370,8 @@ public class ProductController {
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response findByPublisher(
             @PathParam("publisher") String publisher,
-            @Parameter(description = "Page number (0-based)", required = false) @QueryParam("page") Integer page,
-            @Parameter(description = "Page size", required = false) @QueryParam("size") Integer size,
-            @Context UriInfo uriInfo) {
+            @Parameter(description = "Page number (0-based)") @QueryParam("page") Integer page,
+            @Parameter(description = "Page size") @QueryParam("size") Integer size) {
 
         int[] pageParams = PaginationUtil.validatePaginationParams(page, size);
         int validPage = pageParams[0];
@@ -385,6 +380,6 @@ public class ProductController {
         List<ProductDTO> products = productService.findByPublisherPaginated(publisher, validPage, validSize);
         long totalCount = productService.countByPublisher(publisher);
 
-        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize, uriInfo);
+        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize);
     }
 }

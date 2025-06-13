@@ -45,6 +45,7 @@ public class AuditService {
      * @param details    additional details
      */
     public void logCreate(String entityType, String entityId, String details) {
+        LOG.debug("Logging CREATE operation for " + entityType + " with ID: " + entityId);
         logAction("CREATE", entityType, entityId, getAuthenticatedUser(), details);
     }
 
@@ -56,6 +57,7 @@ public class AuditService {
      * @param details    additional details
      */
     public void logUpdate(String entityType, String entityId, String details) {
+        LOG.debug("Logging UPDATE operation for " + entityType + " with ID: " + entityId);
         logAction("UPDATE", entityType, entityId, getAuthenticatedUser(), details);
     }
 
@@ -67,6 +69,7 @@ public class AuditService {
      * @param details    additional details
      */
     public void logDelete(String entityType, String entityId, String details) {
+        LOG.debug("Logging DELETE operation for " + entityType + " with ID: " + entityId);
         logAction("DELETE", entityType, entityId, getAuthenticatedUser(), details);
     }
 
@@ -78,6 +81,7 @@ public class AuditService {
      * @param details    additional details
      */
     public void logRead(String entityType, String entityId, String details) {
+        LOG.debug("Logging READ operation for " + entityType + " with ID: " + entityId);
         logAction("READ", entityType, entityId, getAuthenticatedUser(), details);
     }
 
@@ -92,15 +96,24 @@ public class AuditService {
      */
     public void logAction(String action, String entityType, String entityId, String user, String details) {
         try {
+            LOG.debug("Creating audit log request: action=" + action + ", entityType=" + entityType + 
+                     ", entityId=" + entityId + ", user=" + user);
+
             AuditLogCreateRequest request = AuditLogCreateRequest.of(action, entityType, entityId, user, details);
             try (Response response = auditServiceClient.createAuditLog(request)) {
+                int status = response.getStatus();
 
-                if (response.getStatus() != Response.Status.CREATED.getStatusCode()) {
-                    LOG.warn("Failed to create audit log. Status: " + response.getStatus());
+                if (status == Response.Status.CREATED.getStatusCode()) {
+                    LOG.debug("Successfully created audit log: action=" + action + ", entityType=" + entityType + 
+                             ", entityId=" + entityId + ", status=" + status);
+                } else {
+                    LOG.warn("Failed to create audit log: action=" + action + ", entityType=" + entityType + 
+                            ", entityId=" + entityId + ", status=" + status);
                 }
             }
         } catch (Exception e) {
-            LOG.error("Error creating audit log", e);
+            LOG.error("Error creating audit log: action=" + action + ", entityType=" + entityType + 
+                     ", entityId=" + entityId, e);
         }
     }
 }

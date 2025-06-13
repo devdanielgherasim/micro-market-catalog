@@ -1,16 +1,22 @@
 package cloud.microservices.catalog.clients;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Request DTO for creating a new audit log entry.
  */
-public class AuditLogCreateRequest {
+public class AuditLogCreateRequest implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+    
     private LocalDateTime timestamp;
     private String action;
     private String entityType;
     private String entityId;
-    private String user;
+    private String username;
     private String details;
     private String ipAddress;
     private String userAgent;
@@ -23,18 +29,18 @@ public class AuditLogCreateRequest {
      * @param action     the action
      * @param entityType the entity type
      * @param entityId   the entity id
-     * @param user       the user
+     * @param username   the user
      * @param details    the details
      * @param ipAddress  the ip address
      * @param userAgent  the user agent
      * @param statusCode the status code
      */
-    public AuditLogCreateRequest(LocalDateTime timestamp, String action, String entityType, String entityId, String user, String details, String ipAddress, String userAgent, Integer statusCode) {
+    public AuditLogCreateRequest(LocalDateTime timestamp, String action, String entityType, String entityId, String username, String details, String ipAddress, String userAgent, Integer statusCode) {
         this.timestamp = timestamp;
         this.action = action;
         this.entityType = entityType;
         this.entityId = entityId;
-        this.user = user;
+        this.username = username;
         this.details = details;
         this.ipAddress = ipAddress;
         this.userAgent = userAgent;
@@ -64,7 +70,7 @@ public class AuditLogCreateRequest {
         request.setAction(action);
         request.setEntityType(entityType);
         request.setEntityId(entityId);
-        request.setUser(user);
+        request.setUsername(user);
         request.setDetails(details);
         return request;
     }
@@ -154,18 +160,18 @@ public class AuditLogCreateRequest {
      *
      * @return the user
      */
-    public String getUser() {
-        return user;
+    public String getUsername() {
+        return username;
     }
 
     /**
      * Sets user.
      *
-     * @param user the user
+     * @param username the user
      * @return the user
      */
-    public AuditLogCreateRequest setUser(String user) {
-        this.user = user;
+    public AuditLogCreateRequest setUsername(String username) {
+        this.username = username;
         return this;
     }
 
@@ -251,24 +257,25 @@ public class AuditLogCreateRequest {
 
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         AuditLogCreateRequest that = (AuditLogCreateRequest) o;
-        return timestamp.equals(that.timestamp) && action.equals(that.action) && entityType.equals(that.entityType) && entityId.equals(that.entityId) && user.equals(that.user) && details.equals(that.details) && ipAddress.equals(that.ipAddress) && userAgent.equals(that.userAgent) && statusCode.equals(that.statusCode);
+        return Objects.equals(timestamp, that.timestamp) &&
+                Objects.equals(action, that.action) &&
+                Objects.equals(entityType, that.entityType) &&
+                Objects.equals(entityId, that.entityId) &&
+                Objects.equals(username, that.username) &&
+                Objects.equals(details, that.details) &&
+                Objects.equals(ipAddress, that.ipAddress) &&
+                Objects.equals(userAgent, that.userAgent) &&
+                Objects.equals(statusCode, that.statusCode);
     }
 
     @Override
     public int hashCode() {
-        int result = timestamp.hashCode();
-        result = 31 * result + action.hashCode();
-        result = 31 * result + entityType.hashCode();
-        result = 31 * result + entityId.hashCode();
-        result = 31 * result + user.hashCode();
-        result = 31 * result + details.hashCode();
-        result = 31 * result + ipAddress.hashCode();
-        result = 31 * result + userAgent.hashCode();
-        result = 31 * result + statusCode.hashCode();
-        return result;
+        return Objects.hash(timestamp, action, entityType, entityId, username,
+                details, ipAddress, userAgent, statusCode);
     }
 
     @Override
@@ -278,7 +285,7 @@ public class AuditLogCreateRequest {
                 ", action='" + action + '\'' +
                 ", entityType='" + entityType + '\'' +
                 ", entityId='" + entityId + '\'' +
-                ", user='" + user + '\'' +
+                ", user='" + username + '\'' +
                 ", details='" + details + '\'' +
                 ", ipAddress='" + ipAddress + '\'' +
                 ", userAgent='" + userAgent + '\'' +

@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Positive;
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Objects;
 
 /**
@@ -25,11 +24,6 @@ public class ProductCreateDTO implements Serializable {
     private BigDecimal price;
     @NotBlank(message = "Category is required")
     private String category;
-    private String version;
-    private LocalDate releaseDate;
-    private String publisher;
-    private String features;
-    private String requirements;
     private boolean isAvailable = true;
 
     /**
@@ -39,23 +33,13 @@ public class ProductCreateDTO implements Serializable {
      * @param description  the description
      * @param price        the price
      * @param category     the category
-     * @param version      the version
-     * @param releaseDate  the release date
-     * @param publisher    the publisher
-     * @param features     the features
-     * @param requirements the requirements
      * @param isAvailable  the is available
      */
-    public ProductCreateDTO(String name, String description, BigDecimal price, String category, String version, LocalDate releaseDate, String publisher, String features, String requirements, boolean isAvailable) {
+    public ProductCreateDTO(String name, String description, BigDecimal price, String category, boolean isAvailable) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.category = category;
-        this.version = version;
-        this.releaseDate = releaseDate;
-        this.publisher = publisher;
-        this.features = features;
-        this.requirements = requirements;
         this.isAvailable = isAvailable;
     }
 
@@ -146,106 +130,6 @@ public class ProductCreateDTO implements Serializable {
     }
 
     /**
-     * Gets version.
-     *
-     * @return the version
-     */
-    public String getVersion() {
-        return version;
-    }
-
-    /**
-     * Sets version.
-     *
-     * @param version the version
-     * @return the version
-     */
-    public ProductCreateDTO setVersion(String version) {
-        this.version = version;
-        return this;
-    }
-
-    /**
-     * Gets release date.
-     *
-     * @return the release date
-     */
-    public LocalDate getReleaseDate() {
-        return releaseDate;
-    }
-
-    /**
-     * Sets release date.
-     *
-     * @param releaseDate the release date
-     * @return the release date
-     */
-    public ProductCreateDTO setReleaseDate(LocalDate releaseDate) {
-        this.releaseDate = releaseDate;
-        return this;
-    }
-
-    /**
-     * Gets publisher.
-     *
-     * @return the publisher
-     */
-    public String getPublisher() {
-        return publisher;
-    }
-
-    /**
-     * Sets publisher.
-     *
-     * @param publisher the publisher
-     * @return the publisher
-     */
-    public ProductCreateDTO setPublisher(String publisher) {
-        this.publisher = publisher;
-        return this;
-    }
-
-    /**
-     * Gets features.
-     *
-     * @return the features
-     */
-    public String getFeatures() {
-        return features;
-    }
-
-    /**
-     * Sets features.
-     *
-     * @param features the features
-     * @return the features
-     */
-    public ProductCreateDTO setFeatures(String features) {
-        this.features = features;
-        return this;
-    }
-
-    /**
-     * Gets requirements.
-     *
-     * @return the requirements
-     */
-    public String getRequirements() {
-        return requirements;
-    }
-
-    /**
-     * Sets requirements.
-     *
-     * @param requirements the requirements
-     * @return the requirements
-     */
-    public ProductCreateDTO setRequirements(String requirements) {
-        this.requirements = requirements;
-        return this;
-    }
-
-    /**
      * Is available boolean.
      *
      * @return the boolean
@@ -275,18 +159,12 @@ public class ProductCreateDTO implements Serializable {
                Objects.equals(name, that.name) && 
                Objects.equals(description, that.description) && 
                Objects.equals(price, that.price) && 
-               Objects.equals(category, that.category) && 
-               Objects.equals(version, that.version) && 
-               Objects.equals(releaseDate, that.releaseDate) && 
-               Objects.equals(publisher, that.publisher) && 
-               Objects.equals(features, that.features) && 
-               Objects.equals(requirements, that.requirements);
+               Objects.equals(category, that.category);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, price, category, version, 
-                           releaseDate, publisher, features, requirements, isAvailable);
+        return Objects.hash(name, description, price, category, isAvailable);
     }
 
     @Override
@@ -296,11 +174,6 @@ public class ProductCreateDTO implements Serializable {
                 ", description='" + description + '\'' +
                 ", price=" + price +
                 ", category='" + category + '\'' +
-                ", version='" + version + '\'' +
-                ", releaseDate=" + releaseDate +
-                ", publisher='" + publisher + '\'' +
-                ", features='" + features + '\'' +
-                ", requirements='" + requirements + '\'' +
                 ", isAvailable=" + isAvailable +
                 '}';
     }

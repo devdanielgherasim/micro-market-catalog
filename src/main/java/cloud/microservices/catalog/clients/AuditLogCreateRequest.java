@@ -11,12 +11,21 @@ import java.util.Objects;
 public class AuditLogCreateRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
-    
+
+    @jakarta.validation.constraints.NotNull(message = "Timestamp is required")
     private LocalDateTime timestamp;
+
+    @jakarta.validation.constraints.NotBlank(message = "Action is required")
     private String action;
+
+    @jakarta.validation.constraints.NotBlank(message = "Entity type is required")
     private String entityType;
+
     private String entityId;
+
+    @jakarta.validation.constraints.NotBlank(message = "Username is required")
     private String username;
+
     private String details;
     private String ipAddress;
     private String userAgent;

@@ -6,7 +6,6 @@ import cloud.microservices.catalog.dtos.ProductUpdateDTO;
 import cloud.microservices.catalog.services.ProductService;
 import cloud.microservices.catalog.utils.PaginationUtil;
 import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -124,7 +123,6 @@ public class ProductController {
      * @return the response
      */
     @POST
-    @RolesAllowed("admin")
     @Operation(summary = "Create a new product", description = "Creates a new product in the catalog")
     @APIResponse(responseCode = "201", description = "Product created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -134,8 +132,8 @@ public class ProductController {
     @APIResponse(responseCode = "403", description = "Forbidden")
     public Response createProduct(@Valid ProductCreateDTO productCreateDTO) {
         logger.info("Creating new product: {}", productCreateDTO.getName());
-        logger.debug("Product details: category={}, price={}, publisher={}",
-                productCreateDTO.getCategory(), productCreateDTO.getPrice(), productCreateDTO.getPublisher());
+        logger.debug("Product details: category={}, price={}",
+                productCreateDTO.getCategory(), productCreateDTO.getPrice());
 
         try {
             ProductDTO createdProduct = productService.createProduct(productCreateDTO);
@@ -161,7 +159,6 @@ public class ProductController {
      */
     @PUT
     @Path("/{id}")
-    @RolesAllowed("admin")
     @Operation(summary = "Update a product", description = "Updates an existing product")
     @APIResponse(responseCode = "200", description = "Product updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -200,7 +197,6 @@ public class ProductController {
      */
     @DELETE
     @Path("/{id}")
-    @RolesAllowed("admin")
     @Operation(summary = "Delete a product", description = "Deletes a product from the catalog")
     @APIResponse(responseCode = "204", description = "Product deleted")
     @APIResponse(responseCode = "404", description = "Product not found")
@@ -351,35 +347,4 @@ public class ProductController {
         return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize);
     }
 
-    /**
-     * Find products by publisher with pagination support.
-     *
-     * @param publisher the publisher
-     * @param page      the page number (0-based)
-     * @param size      the page size
-     * @return the paginated response
-     */
-    @GET
-    @Path("/publisher/{publisher}")
-    @PermitAll
-    @Operation(summary = "Find products by publisher", description = "Returns products from the specified publisher with pagination support")
-    @APIResponse(responseCode = "200", description = "Paginated list of products",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                    schema = @Schema(implementation = ProductDTO.class)))
-    @APIResponse(responseCode = "401", description = "Unauthorized")
-    @APIResponse(responseCode = "403", description = "Forbidden")
-    public Response findByPublisher(
-            @PathParam("publisher") String publisher,
-            @Parameter(description = "Page number (0-based)") @QueryParam("page") Integer page,
-            @Parameter(description = "Page size") @QueryParam("size") Integer size) {
-
-        int[] pageParams = PaginationUtil.validatePaginationParams(page, size);
-        int validPage = pageParams[0];
-        int validSize = pageParams[1];
-
-        List<ProductDTO> products = productService.findByPublisherPaginated(publisher, validPage, validSize);
-        long totalCount = productService.countByPublisher(publisher);
-
-        return PaginationUtil.createPaginatedResponse(products, totalCount, validPage, validSize);
-    }
 }

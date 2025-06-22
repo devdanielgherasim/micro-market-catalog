@@ -34,14 +34,6 @@ public class Product extends PanacheEntity implements Serializable {
     private BigDecimal price;
     @Column(nullable = false)
     private String category;
-    private String version;
-    @Column(name = "release_date")
-    private LocalDate releaseDate;
-    private String publisher;
-    @Column(length = 2000)
-    private String features;
-    @Column(length = 1000)
-    private String requirements;
     @Column(name = "is_available", nullable = false)
     private boolean isAvailable = true;
 
@@ -52,23 +44,13 @@ public class Product extends PanacheEntity implements Serializable {
      * @param description  the description
      * @param price        the price
      * @param category     the category
-     * @param version      the version
-     * @param releaseDate  the release date
-     * @param publisher    the publisher
-     * @param features     the features
-     * @param requirements the requirements
      * @param isAvailable  the is available
      */
-    public Product(String name, String description, BigDecimal price, String category, String version, LocalDate releaseDate, String publisher, String features, String requirements, boolean isAvailable) {
+    public Product(String name, String description, BigDecimal price, String category, boolean isAvailable) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.category = category;
-        this.version = version;
-        this.releaseDate = releaseDate;
-        this.publisher = publisher;
-        this.features = features;
-        this.requirements = requirements;
         this.isAvailable = isAvailable;
     }
 
@@ -159,106 +141,6 @@ public class Product extends PanacheEntity implements Serializable {
     }
 
     /**
-     * Gets version.
-     *
-     * @return the version
-     */
-    public String getVersion() {
-        return version;
-    }
-
-    /**
-     * Sets version.
-     *
-     * @param version the version
-     * @return the version
-     */
-    public Product setVersion(String version) {
-        this.version = version;
-        return this;
-    }
-
-    /**
-     * Gets release date.
-     *
-     * @return the release date
-     */
-    public LocalDate getReleaseDate() {
-        return releaseDate;
-    }
-
-    /**
-     * Sets release date.
-     *
-     * @param releaseDate the release date
-     * @return the release date
-     */
-    public Product setReleaseDate(LocalDate releaseDate) {
-        this.releaseDate = releaseDate;
-        return this;
-    }
-
-    /**
-     * Gets publisher.
-     *
-     * @return the publisher
-     */
-    public String getPublisher() {
-        return publisher;
-    }
-
-    /**
-     * Sets publisher.
-     *
-     * @param publisher the publisher
-     * @return the publisher
-     */
-    public Product setPublisher(String publisher) {
-        this.publisher = publisher;
-        return this;
-    }
-
-    /**
-     * Gets features.
-     *
-     * @return the features
-     */
-    public String getFeatures() {
-        return features;
-    }
-
-    /**
-     * Sets features.
-     *
-     * @param features the features
-     * @return the features
-     */
-    public Product setFeatures(String features) {
-        this.features = features;
-        return this;
-    }
-
-    /**
-     * Gets requirements.
-     *
-     * @return the requirements
-     */
-    public String getRequirements() {
-        return requirements;
-    }
-
-    /**
-     * Sets requirements.
-     *
-     * @param requirements the requirements
-     * @return the requirements
-     */
-    public Product setRequirements(String requirements) {
-        this.requirements = requirements;
-        return this;
-    }
-
-    /**
      * Is available boolean.
      *
      * @return the boolean
@@ -289,18 +171,12 @@ public class Product extends PanacheEntity implements Serializable {
                Objects.equals(name, product.name) && 
                Objects.equals(description, product.description) && 
                Objects.equals(price, product.price) && 
-               Objects.equals(category, product.category) && 
-               Objects.equals(version, product.version) && 
-               Objects.equals(releaseDate, product.releaseDate) && 
-               Objects.equals(publisher, product.publisher) && 
-               Objects.equals(features, product.features) && 
-               Objects.equals(requirements, product.requirements);
+               Objects.equals(category, product.category);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, price, category, version, 
-                           releaseDate, publisher, features, requirements, isAvailable);
+        return Objects.hash(id, name, description, price, category, isAvailable);
     }
 
     @Override
@@ -310,11 +186,6 @@ public class Product extends PanacheEntity implements Serializable {
                 ", description='" + description + '\'' +
                 ", price=" + price +
                 ", category='" + category + '\'' +
-                ", version='" + version + '\'' +
-                ", releaseDate=" + releaseDate +
-                ", publisher='" + publisher + '\'' +
-                ", features='" + features + '\'' +
-                ", requirements='" + requirements + '\'' +
                 ", isAvailable=" + isAvailable +
                 '}';
     }

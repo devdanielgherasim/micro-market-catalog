@@ -91,26 +91,38 @@ public class AuditService {
      * @param action     the action performed
      * @param entityType the type of entity
      * @param entityId   the ID of the entity
-     * @param user       the user who performed the action
+     * @param username   the username who performed the action
      * @param details    additional details
      */
-    public void logAction(String action, String entityType, String entityId, String user, String details) {
+    public void logAction(String action, String entityType, String entityId, String username, String details) {
         try {
             LOG.debug("Creating audit log request: action=" + action + ", entityType=" + entityType + 
-                     ", entityId=" + entityId + ", user=" + user);
+                     ", entityId=" + entityId + ", username=" + username);
 
-            AuditLogCreateRequest request = AuditLogCreateRequest.of(action, entityType, entityId, user, details);
+            AuditLogCreateRequest request = AuditLogCreateRequest.of(action, entityType, entityId, username, details);
             try (Response response = auditServiceClient.createAuditLog(request)) {
                 int status = response.getStatus();
 
                 if (status == Response.Status.CREATED.getStatusCode()) {
                     LOG.debug("Successfully created audit log: action=" + action + ", entityType=" + entityType + 
                              ", entityId=" + entityId + ", status=" + status);
+                } else if (status == Response.Status.UNAUTHORIZED.getStatusCode()) {
+                    LOG.error("Authentication failed when creating audit log: action=" + action + 
+                             ", entityType=" + entityType + ", entityId=" + entityId + 
+                             ". Check credentials in AuditServiceClient.");
+                } else if (status == Response.Status.FORBIDDEN.getStatusCode()) {
+                    LOG.error("Authorization failed when creating audit log: action=" + action + 
+                             ", entityType=" + entityType + ", entityId=" + entityId + 
+                             ". User may not have required permissions.");
                 } else {
                     LOG.warn("Failed to create audit log: action=" + action + ", entityType=" + entityType + 
                             ", entityId=" + entityId + ", status=" + status);
                 }
             }
+        } catch (jakarta.ws.rs.ProcessingException e) {
+            LOG.error("Network or connection error creating audit log: action=" + action + 
+                     ", entityType=" + entityType + ", entityId=" + entityId + 
+                     ". Audit service may be unavailable.", e);
         } catch (Exception e) {
             LOG.error("Error creating audit log: action=" + action + ", entityType=" + entityType + 
                      ", entityId=" + entityId, e);

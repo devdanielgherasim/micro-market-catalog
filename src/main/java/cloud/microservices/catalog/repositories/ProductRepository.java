@@ -164,35 +164,4 @@ public class ProductRepository implements PanacheRepository<Product> {
         return count("isAvailable", true);
     }
 
-    /**
-     * Find products by publisher.
-     *
-     * @param publisher the publisher to search for
-     * @return list of products from the specified publisher
-     */
-    public List<Product> findByPublisher(String publisher) {
-        return list("publisher", publisher);
-    }
-
-    /**
-     * Find products by publisher with pagination.
-     *
-     * @param publisher the publisher to search for
-     * @param page the page number (0-based)
-     * @param size the page size
-     * @return paginated query of products from the specified publisher
-     */
-    public PanacheQuery<Product> findByPublisherPaginated(String publisher, int page, int size) {
-        return find("publisher", publisher).page(Page.of(page, size));
-    }
-
-    /**
-     * Count products by publisher.
-     *
-     * @param publisher the publisher to search for
-     * @return count of products from the specified publisher
-     */
-    public long countByPublisher(String publisher) {
-        return count("publisher", publisher);
-    }
 }

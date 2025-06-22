@@ -9,11 +9,11 @@ import java.util.List;
  * Provides methods for creating paginated responses with appropriate headers.
  */
 public class PaginationUtil {
-
-    private static final String HEADER_X_TOTAL_COUNT = "X-Total-Count";
-    private static final String HEADER_LINK = "Link";
     private static final int DEFAULT_PAGE_SIZE = 20;
     private static final int MAX_PAGE_SIZE = 100;
+
+    private PaginationUtil() {
+    }
 
     /**
      * Validates and normalizes pagination parameters.
@@ -47,8 +47,6 @@ public class PaginationUtil {
 
         PageResponse<T> pageResponse = PageResponse.of(items, totalCount, page, size);
 
-        // Ensure proper JSON serialization by explicitly setting content type and encoding
-        // Use entity() method to ensure the object is properly serialized
         return Response.ok()
                 .entity(pageResponse)
                 .header("Content-Type", jakarta.ws.rs.core.MediaType.APPLICATION_JSON)

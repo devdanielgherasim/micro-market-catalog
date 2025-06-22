@@ -29,11 +29,6 @@ public class ProductMapper {
                 product.getDescription(),
                 product.getPrice(),
                 product.getCategory(),
-                product.getVersion(),
-                product.getReleaseDate(),
-                product.getPublisher(),
-                product.getFeatures(),
-                product.getRequirements(),
                 product.isAvailable()
         );
     }
@@ -53,11 +48,6 @@ public class ProductMapper {
         product.setDescription(dto.getDescription());
         product.setPrice(dto.getPrice());
         product.setCategory(dto.getCategory());
-        product.setVersion(dto.getVersion());
-        product.setReleaseDate(dto.getReleaseDate());
-        product.setPublisher(dto.getPublisher());
-        product.setFeatures(dto.getFeatures());
-        product.setRequirements(dto.getRequirements());
         product.setAvailable(dto.isAvailable());
     }
 
@@ -83,21 +73,6 @@ public class ProductMapper {
         }
         if (dto.getCategory() != null) {
             product.setCategory(dto.getCategory());
-        }
-        if (dto.getVersion() != null) {
-            product.setVersion(dto.getVersion());
-        }
-        if (dto.getReleaseDate() != null) {
-            product.setReleaseDate(dto.getReleaseDate());
-        }
-        if (dto.getPublisher() != null) {
-            product.setPublisher(dto.getPublisher());
-        }
-        if (dto.getFeatures() != null) {
-            product.setFeatures(dto.getFeatures());
-        }
-        if (dto.getRequirements() != null) {
-            product.setRequirements(dto.getRequirements());
         }
         if (dto.getAvailable() != null) {
             product.setAvailable(dto.getAvailable());

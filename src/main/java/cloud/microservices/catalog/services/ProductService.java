@@ -47,6 +47,7 @@ public class ProductService {
             logger.debug("Service: Retrieving paginated products from repository");
             List<ProductDTO> products = productRepository.findAllPaginated(page, size).list().stream()
                     .map(productMapper::toDTO)
+                    .sorted((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()))
                     .toList();
 
             logger.info("Service: Retrieved {} products for page {} with size {}", products.size(), page, size);
@@ -229,6 +230,7 @@ public class ProductService {
     public List<ProductDTO> findByCategoryPaginated(String category, int page, int size) {
         return productRepository.findByCategoryPaginated(category, page, size).list().stream()
                 .map(productMapper::toDTO)
+                .sorted((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()))
                 .toList();
     }
 
@@ -254,6 +256,7 @@ public class ProductService {
     public List<ProductDTO> findByNamePaginated(String name, int page, int size) {
         return productRepository.findByNameContainingPaginated(name, page, size).list().stream()
                 .map(productMapper::toDTO)
+                .sorted((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()))
                 .toList();
     }
 
@@ -279,6 +282,7 @@ public class ProductService {
     public List<ProductDTO> findByPriceRangePaginated(BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
         return productRepository.findByPriceRangePaginated(minPrice, maxPrice, page, size).list().stream()
                 .map(productMapper::toDTO)
+                .sorted((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()))
                 .toList();
     }
 
@@ -304,6 +308,7 @@ public class ProductService {
     public List<ProductDTO> findAvailableProductsPaginated(int page, int size) {
         return productRepository.findAvailablePaginated(page, size).list().stream()
                 .map(productMapper::toDTO)
+                .sorted((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()))
                 .toList();
     }
 

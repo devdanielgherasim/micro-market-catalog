@@ -123,6 +123,7 @@ public class ProductController {
      * @return the response
      */
     @POST
+    @PermitAll
     @Operation(summary = "Create a new product", description = "Creates a new product in the catalog")
     @APIResponse(responseCode = "201", description = "Product created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -159,6 +160,7 @@ public class ProductController {
      */
     @PUT
     @Path("/{id}")
+    @PermitAll
     @Operation(summary = "Update a product", description = "Updates an existing product")
     @APIResponse(responseCode = "200", description = "Product updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -197,6 +199,7 @@ public class ProductController {
      */
     @DELETE
     @Path("/{id}")
+    @PermitAll
     @Operation(summary = "Delete a product", description = "Deletes a product from the catalog")
     @APIResponse(responseCode = "204", description = "Product deleted")
     @APIResponse(responseCode = "404", description = "Product not found")

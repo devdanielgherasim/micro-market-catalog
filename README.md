@@ -1,120 +1,119 @@
 # Catalog Microservice
 
-A microservice for managing a catalog of software products and services.
+Product catalog microservice for the microservices dissertation project, built with Java 21 and Quarkus 3.18.3. It owns the `Product` entity (CRUD + search) and exposes it over a REST API on port **8088**. The `orders` service calls catalog synchronously to fetch product information for order line items; catalog (like `orders`) fire-and-forget logs its write operations to the `audit` service and degrades gracefully (logs a warning, never fails the caller) if audit is unreachable.
 
-## Overview
+## Tech stack
 
-The Catalog Microservice is part of a microservices-based application for selling software products and services. It provides CRUD operations and search functionality for the product catalog.
+Confirmed from `pom.xml` (Quarkus BOM 3.18.3, Java 21):
 
-## Features
+- `quarkus-rest` (JAX-RS / RESTEasy Reactive, used imperatively) + `quarkus-hibernate-orm-rest-data-panache`
+- `quarkus-hibernate-orm` + `quarkus-hibernate-orm-panache` (Panache active-record entities)
+- `quarkus-jdbc-postgresql`
+- `quarkus-hibernate-validator` (Bean Validation on entities/DTOs)
+- `quarkus-smallrye-openapi` (OpenAPI/Swagger UI) + `quarkus-smallrye-health` (health checks)
+- `quarkus-oidc` + `quarkus-keycloak-authorization` (Keycloak-backed auth; catalog carries the policy-enforcer extension)
+- `quarkus-rest-client` + `quarkus-rest-client-jackson` (outbound REST client to the audit service)
+- `quarkus-jackson` + `jackson-datatype-jsr310`, `quarkus-arc`, `quarkus-opentelemetry`, `quarkus-container-image-docker`, `slf4j-api`
+- Test scope: `quarkus-junit5`, `quarkus-junit5-mockito`, `rest-assured`, `testcontainers` (`postgresql` module)
 
-- Create, read, update, and delete software products
-- Search products by various criteria (name, category, price range, publisher)
-- Filter available products
-- RESTful API with JSON responses
-- Swagger UI for API documentation and testing
-- PostgreSQL database for data persistence
-- Validation for data integrity
-- Standardized error responses
+## Domain model
 
-## Tech Stack
+The only entity is `Product` (`entities/Product.java`, table `products`, extends `PanacheEntity`). Its actual fields are:
 
-- Java 21
-- Quarkus 3.18.3
-- PostgreSQL
-- Hibernate ORM with Panache
-- JAX-RS for REST endpoints
-- Swagger/OpenAPI for documentation
-- Docker support
+- `id` (inherited `Long` from `PanacheEntity`)
+- `name` — `String`, `@NotBlank`, not nullable
+- `description` — `String`, column length 2000
+- `price` — `BigDecimal`, `@NotNull @Positive`, not nullable
+- `category` — `String`, not nullable
+- `isAvailable` — `boolean` (column `is_available`, not nullable, defaults to `true`)
 
-## API Endpoints
+There is no `version`, `releaseDate`, `publisher`, `features`, or `requirements` field on the entity — an earlier revision of this README described those but they do not exist in the current code. `ProductDTO`, `ProductCreateDTO`, and `ProductUpdateDTO` mirror the same five business fields (the DTO serializes `isAvailable` as JSON property `available`).
 
-### Product Operations
+## API endpoints
 
-- `GET /api/products` - Get all products
-- `GET /api/products/{id}` - Get product by ID
-- `POST /api/products` - Create a new product
-- `PUT /api/products/{id}` - Update an existing product
-- `DELETE /api/products/{id}` - Delete a product
+All routes are under `/api/products` (`controllers/ProductController.java`), JSON in/out, `@PermitAll` on every method (open at the HTTP layer; see Auth below for what OIDC/Keycloak is actually configured to do):
 
-### Search Operations
+- `GET /api/products?page=&size=` — paginated list of all products
+- `GET /api/products/{id}` — get by id (404 if missing)
+- `POST /api/products` — create (validated `ProductCreateDTO`)
+- `PUT /api/products/{id}` — update (validated `ProductUpdateDTO`)
+- `DELETE /api/products/{id}` — delete
+- `GET /api/products/category/{category}?page=&size=` — paginated search by category
+- `GET /api/products/search?name=&page=&size=` — paginated name search
+- `GET /api/products/price?min=&max=&page=&size=` — paginated price-range search
+- `GET /api/products/available?page=&size=` — paginated available-only list
 
-- `GET /api/products/category/{category}` - Find products by category
-- `GET /api/products/search?name={name}` - Search products by name
-- `GET /api/products/price?min={min}&max={max}` - Find products by price range
-- `GET /api/products/available` - Find available products
-- `GET /api/products/publisher/{publisher}` - Find products by publisher
+Pagination is hand-rolled via `utils/PaginationUtil` and `utils/PageResponse`, not Panache's built-in paging. There is no publisher-based search endpoint despite what an earlier version of this document claimed.
 
-## Database Schema
+### Outbound call: audit logging
 
-The main entity in this microservice is the `Product` which has the following attributes:
+`clients/AuditServiceClient` is a MicroProfile REST client (`@RegisterRestClient(configKey = "audit-service")`) that POSTs to `/api/audit` on the audit service, with Keycloak token propagation via `clients/AuditServiceTokenRequestFilter`. `services/AuditService` wraps every call in a try/catch — `ProcessingException` (audit unreachable) and any other exception are caught and logged, never propagated, so a failing audit write never blocks or fails the primary product operation.
 
-- `id` - Unique identifier
-- `name` - Product name
-- `description` - Product description
-- `price` - Product price
-- `category` - Product category
-- `version` - Software version
-- `releaseDate` - Release date
-- `publisher` - Publisher name
-- `features` - Product features
-- `requirements` - System requirements
-- `isAvailable` - Availability status
+## Local development
 
-## Environment Variables
-
-The application can be configured using the following environment variables:
-
-- `DB_USERNAME` - Database username (default: postgres)
-- `DB_PASSWORD` - Database password (default: postgres)
-- `DB_HOST` - Database host (default: localhost)
-- `DB_PORT` - Database port (default: 5432)
-- `DB_NAME` - Database name (default: catalog)
-- `HTTP_PORT` - HTTP port for the application (default: 8088)
-
-## Running the application
-
-### Development Mode
-
-```shell script
+```shell
 ./mvnw quarkus:dev
 ```
 
-This will start the application in development mode with hot reload.
+Starts Quarkus in dev mode with hot reload; Dev UI at <http://localhost:8088/q/dev/>.
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8088/q/dev/>.
+The app expects PostgreSQL at **`localhost:5433`** by default (see `application.properties`), overridable via environment variables:
 
-### Production Mode
+- `DB_HOST` (default `localhost`), `DB_PORT` (default `5433`), `DB_NAME` (default `microservices1691716`)
+- `DB_USERNAME` (default `postgres`), `DB_PASSWORD` (default a committed lab-scope fallback, see Known notes below)
+- `HTTP_PORT` (default `8088`)
 
-```shell script
-./mvnw package
-java -jar target/quarkus-app/quarkus-run.jar
+`quarkus.hibernate-orm.database.generation` defaults to `drop-and-create` (overridable via `HIBERNATE_GENERATION`), so **every dev-mode restart drops and recreates the schema**, then reloads `src/main/resources/import.sql` (configurable via `HIBERNATE_LOAD_SCRIPT`) — don't rely on data surviving a restart.
+
+## API documentation
+
+- Swagger UI: <http://localhost:8088/swagger-ui>
+- OpenAPI spec: <http://localhost:8088/openapi>
+- Liveness: <http://localhost:8088/health/live>
+- Readiness: <http://localhost:8088/health/ready>
+
+## Testing
+
+```shell
+./mvnw test
 ```
 
-### Docker
+Requires a working Docker daemon — the suite uses Testcontainers to spin up a real `postgres:16-alpine` container per test class (`PostgresTestResource`, a `QuarkusTestResourceLifecycleManager`), pointing the datasource at the container, forcing `drop-and-create` with no load script, and stubbing `quarkus.rest-client.audit-service.url` to an unreachable address. Actual test classes found under `src/test/java/cloud/microservices/catalog/`:
 
-```shell script
-./mvnw package
-docker build -f src/main/docker/Dockerfile.jvm -t catalog-microservice .
-docker run -i --rm -p 8088:8088 catalog-microservice
+- `repositories/ProductRepositoryTest` — `@QuarkusTest`, exercises `ProductRepository` count/filter queries (by category, name-contains, price range, availability) against the containerized DB.
+- `controllers/ProductControllerTest` — `@QuarkusTest` + REST Assured, drives the full create/read/update/delete flow through the real HTTP endpoints, with `AuditService` mocked out via `@InjectMock`.
+- `controllers/ProductControllerIT` — `@QuarkusIntegrationTest` smoke test that runs against the packaged artifact and asserts `/health/ready` returns 200.
+
+## Build
+
+```shell
+./mvnw package                                                            # JVM build -> target/quarkus-app/quarkus-run.jar
+./mvnw clean package -Dnative -Dquarkus.native.container-build=true       # native build via container (what CI runs)
 ```
 
-## API Documentation
+## CI/CD
 
-Swagger UI is available at: http://localhost:8088/swagger-ui/
+The pipeline (`.gitlab-ci.yml`) declares stages `test -> scan -> build -> sign -> promote`, but only the `test` and `build-and-push-native` jobs are defined locally; everything else (the `scan`, `sign`, and `promote` stage jobs, plus shared SAST/dependency/secret scanning with a HIGH/CRITICAL gate, and the image supply chain: Trivy scan, Syft SBOM, cosign keyless sign+verify) comes from a shared template included from the `utilities` repo:
 
-OpenAPI specification is available at: http://localhost:8088/openapi
+```yaml
+include:
+  - project: microservices1691715/utilities
+    ref: main
+    file: ci-templates/java-service.gitlab-ci.yml
+```
 
-## Health Checks
+Locally defined jobs:
 
-- Liveness check: http://localhost:8088/health/live
-- Readiness check: http://localhost:8088/health/ready
+- **`test`** (stage `test`): runs `./mvnw test` inside the shared `${CONTAINER_REGISTRY_NAME}/java21-docker-azcli:latest` image with a `docker:dind` service (needed for Testcontainers), publishes JUnit XML from `target/surefire-reports/`.
+- **`build-and-push-native`** (stage `build`): runs `./build.sh` (native image build + push), then exports `IMAGE_REF`/`IMAGE_DIGEST` via a shared `.export-image-ref` snippet into `build.env` (a dotenv artifact) so the downstream `sign`/`promote` stage jobs from the shared template can pick up the built image reference.
 
-## Related Guides
+`build.sh` is cloud-provider-aware (`CLOUD_PROVIDER` = `aws`/`azure`/`gcp`, default `aws`): it resolves/logs into the right registry (ECR, ACR, or Artifact Registry, including OIDC-based login paths) unless a caller already exported `CONTAINER_REGISTRY_NAME`/performed login, then runs `mvn clean package -Dnative` with `-Dquarkus.container-image.{build,push}=true` pointed at that registry, tagged with `CI_COMMIT_SHA`.
 
-- REST resources for Hibernate ORM with Panache ([guide](https://quarkus.io/guides/rest-data-panache))
-- Hibernate ORM with Panache ([guide](https://quarkus.io/guides/hibernate-orm-panache))
-- REST ([guide](https://quarkus.io/guides/rest))
-- Hibernate Validator ([guide](https://quarkus.io/guides/validation))
-- SmallRye Health ([guide](https://quarkus.io/guides/smallrye-health))
-- JDBC Driver - PostgreSQL ([guide](https://quarkus.io/guides/datasource))
+## Auth
+
+Uses `quarkus-oidc` against the shared `microservices` Keycloak realm (`quarkus.oidc.client-id=catalog-service`, realm URL defaults under `KEYCLOAK_URL`/`TOKEN_ISSUER` env vars). Catalog also depends on `quarkus-keycloak-authorization` (confirmed in `pom.xml`), though `quarkus.keycloak.policy-enforcer.enable=false` in `application.properties` and every `/api/products/*` path is configured `permission.public.policy=permit` for all methods — so today authorization is effectively open at the product endpoints; only `/*` in general falls back to `authenticated`, and `/health/*` is explicitly public. Token propagation is enabled (`quarkus.oidc.token-propagation.enabled=true`) so an incoming user's token is forwarded on the outbound call to the audit service.
+
+## Known inconsistencies
+
+- `quarkus.datasource.password` in `application.properties` has a committed fallback default (`${DB_PASSWORD:oRncHiOovwJAVOXK}`). This is an accepted lab-scope default used across all three services, not something to rotate from here — see the workspace-level `CLAUDE.md` for the full list of known cross-repo drift.
+- This README previously documented `Product` fields (`version`, `releaseDate`, `publisher`, `features`, `requirements`) and a publisher-search endpoint that never existed in the code; both have been removed above to match the actual entity and controller.

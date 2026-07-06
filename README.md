@@ -104,7 +104,7 @@ include:
 
 Locally defined jobs:
 
-- **`test`** (stage `test`): runs `./mvnw test` inside the shared `${CONTAINER_REGISTRY_NAME}/java21-docker-azcli:latest` image with a `docker:dind` service (needed for Testcontainers), publishes JUnit XML from `target/surefire-reports/`.
+- **`test`** (stage `test`): runs `./mvnw test` inside the shared `${CI_TOOLS_IMAGE}` (cloud-specific `ci-base-aws/azure/gcp`) with a `docker:dind` service (needed for Testcontainers), publishes JUnit XML from `target/surefire-reports/`.
 - **`build-and-push-native`** (stage `build`): runs `./build.sh` (native image build + push), then exports `IMAGE_REF`/`IMAGE_DIGEST` via a shared `.export-image-ref` snippet into `build.env` (a dotenv artifact) so the downstream `sign`/`promote` stage jobs from the shared template can pick up the built image reference.
 
 `build.sh` is cloud-provider-aware (`CLOUD_PROVIDER` = `aws`/`azure`/`gcp`, default `aws`): it resolves/logs into the right registry (ECR, ACR, or Artifact Registry, including OIDC-based login paths) unless a caller already exported `CONTAINER_REGISTRY_NAME`/performed login, then runs `mvn clean package -Dnative` with `-Dquarkus.container-image.{build,push}=true` pointed at that registry, tagged with `CI_COMMIT_SHA`.

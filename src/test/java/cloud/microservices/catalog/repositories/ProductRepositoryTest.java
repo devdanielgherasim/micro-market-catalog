@@ -1,9 +1,7 @@
 package cloud.microservices.catalog.repositories;
 
-import cloud.microservices.catalog.PostgresTestResource;
 import cloud.microservices.catalog.entities.Product;
 import io.quarkus.test.TestTransaction;
-import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -13,7 +11,6 @@ import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-@QuarkusTestResource(PostgresTestResource.class)
 class ProductRepositoryTest {
 
     @Inject

@@ -93,19 +93,22 @@ Requires a working Docker daemon — the suite uses Testcontainers to spin up a 
 
 ## CI/CD
 
-The pipeline (`.gitlab-ci.yml`) declares stages `test -> scan -> build -> sign -> promote`, but only the `test` and `build-and-push-native` jobs are defined locally; everything else (the `scan`, `sign`, and `promote` stage jobs, plus shared SAST/dependency/secret scanning with a HIGH/CRITICAL gate, and the image supply chain: Trivy scan, Syft SBOM, cosign keyless sign+verify) comes from a shared template included from the `utilities` repo:
+CI runs on GitHub Actions (`.github/workflows/ci.yml`; migrated from GitLab CI,
+see `Sources/plans/2026-07-08-gitlab-to-github-migration.md`). Three jobs:
 
-```yaml
-include:
-  - project: microservices1691715/utilities
-    ref: main
-    file: ci-templates/java-service.gitlab-ci.yml
-```
-
-Locally defined jobs:
-
-- **`test`** (stage `test`): runs `./mvnw test` inside the shared `${CI_TOOLS_IMAGE}` (cloud-specific `ci-base-aws/azure/gcp`) with a `docker:dind` service (needed for Testcontainers), publishes JUnit XML from `target/surefire-reports/`.
-- **`build-and-push-native`** (stage `build`): runs `./build.sh` (native image build + push), then exports `IMAGE_REF`/`IMAGE_DIGEST` via a shared `.export-image-ref` snippet into `build.env` (a dotenv artifact) so the downstream `sign`/`promote` stage jobs from the shared template can pick up the built image reference.
+- **`test`**: runs `./mvnw test` on a GitHub-hosted runner, publishes JUnit
+  results as a workflow artifact.
+- **`build-and-push-native`**: logs into the cloud container registry via the
+  shared `cloud-registry-login` composite action (OIDC, no static cloud
+  credentials), runs `./build.sh` (native image build + push), then resolves
+  the pushed image reference/digest via the shared `resolve-image-ref`
+  composite action.
+- **`security-scan-gate`** and **`image-supply-chain`**: call the reusable
+  workflows in `devdanielgherasim/micro-market-utilities` — CodeQL (with a
+  HIGH/CRITICAL severity gate), gitleaks, and dependency-review; then Trivy
+  image scan, Syft SBOM, cosign keyless sign+verify, and a
+  `repository_dispatch` trigger into the `deployment` repo's promotion
+  workflow.
 
 `build.sh` is cloud-provider-aware (`CLOUD_PROVIDER` = `aws`/`azure`/`gcp`, default `aws`): it resolves/logs into the right registry (ECR, ACR, or Artifact Registry, including OIDC-based login paths) unless a caller already exported `CONTAINER_REGISTRY_NAME`/performed login, then runs `mvn clean package -Dnative` with `-Dquarkus.container-image.{build,push}=true` pointed at that registry, tagged with `CI_COMMIT_SHA`.
 
